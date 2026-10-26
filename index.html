@@ -1,7 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>LUMS Pad Machines</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="icon" type="image/jpeg" href="/logo.jpg?v=2">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -242,7 +241,8 @@ label.btn.ghost { cursor: pointer; }
 .role-desc { color: var(--muted); font-size: 14px; line-height: 1.4; }
 .role-tag { display: inline-block; align-self: flex-start; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); margin-top: 4px; }
 .banner { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--bad-soft); color: var(--ink); font-weight: 600; font-size: 14px; }
-.staff-card, .gate-card { grid-column: 1 / -1; align-self: start; }
+.staff-card { grid-column: 1 / -1; align-self: start; min-width: 0; }
+.gate-card { grid-column: 1 / -1; align-self: start; }
 #staffPassword { width:100%; margin:8px 0 12px; }
 #staffReports .sitem { background:var(--surface); }
 #staffReports .sitem .resolve { min-width:0; }
@@ -253,10 +253,14 @@ label.btn.ghost { cursor: pointer; }
 .shead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: var(--surface-2); flex-wrap: wrap; }
 .shead h3 { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
 .sitems { list-style: none; margin: 0; padding: 0; }
-.sitem { padding: 10px 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
+.sitem { padding: 12px 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; font-size: 15px; min-width: 0; }
 .smeta { font-size: 13px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
-.sdesc { overflow-wrap: anywhere; }
+.sdesc { overflow-wrap: anywhere; word-break: break-word; }
 .sitem .resolve { align-self: flex-start; margin-top: 8px; }
+.staff-card { display: flex; flex-direction: column; gap: 12px; }
+#staffCard[hidden] { display: none !important; }
+.staff-card h2, .staff-card .sub { overflow-wrap: anywhere; }
+#staffReports, .sgroup, .sitems { min-width: 0; max-width: 100%; }
 
 .foot { font-size: 13px; color: var(--muted); max-width: 70ch; }
 
@@ -268,6 +272,9 @@ label.btn.ghost { cursor: pointer; }
 @media (min-width: 960px) {
   body { padding-block: 32px 72px; }
   .grid { grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); grid-template-areas: "map form" "detail form" "list form"; align-items: start; }
+  .grid.staff-mode { grid-template-columns: minmax(0, 1.15fr) minmax(360px, 0.85fr); grid-template-areas: "map staff" "detail staff" "list staff"; align-items: start; }
+  .grid.staff-mode .staff-card { grid-area: staff; grid-column: auto; position: relative; min-width: 0; width: 100%; }
+  .grid.staff-mode .staff-groups { min-width: 0; }
   .machines { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .tally { grid-template-columns: repeat(2, minmax(0, 220px)); }
   .map-hint { display: none; }
@@ -382,7 +389,6 @@ label.btn.ghost { cursor: pointer; }
     </section>
   </div>
 
-  <p class="foot">Reports and machine status are shared through the LUMS Pad Machines server. The server laptop must stay on and connected for the website to sync.</p>
 
   <div class="overlay" id="roleModal" role="dialog" aria-modal="true" aria-labelledby="roleTitle">
     <div class="modal">
@@ -479,7 +485,7 @@ label.btn.ghost { cursor: pointer; }
       var n = $("formNotice");
       if (n && !n.querySelector(".server-error")) {
         var d = document.createElement("div"); d.className = "notice bad server-error";
-        d.textContent = "Cannot reach the shared server. Start server.js on the host laptop and open this site through its server address.";
+        d.textContent = "Cannot reach the server. Check your connection and try again.";
         n.appendChild(d);
       }
     });
@@ -608,6 +614,7 @@ label.btn.ghost { cursor: pointer; }
   }
   function setRole(role) {
     state.role = role; state.staff = role === "staff";
+    document.querySelector(".grid").classList.toggle("staff-mode", state.staff);
     $("currentRole").textContent = "Role: " + (state.staff ? "In-charge" : "Student / Visitor");
     $("staffCard").hidden = !state.staff;
     $("report").hidden = state.staff;
