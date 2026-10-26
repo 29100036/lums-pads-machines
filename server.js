@@ -6,7 +6,12 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-
+const STATIC_FILES = {
+  '/logo.jpg': 'logo.jpg',
+  '/logo.jpeg': 'logo.jpeg',
+  '/logo.png': 'logo.png',
+  '/favicon.ico': 'favicon.ico'
+};
 const ROOT = __dirname;
 const HTML_FILE = path.join(ROOT, 'index.html');
 const DATA_FILE = path.join(ROOT, 'data.json');
@@ -119,6 +124,29 @@ const server = http.createServer(async (req, res) => {
       if (!auth(req)) return send(res, 401, { error: 'Sign in as in-charge to resolve complaints.' });
       const body = await readBody(req);
       const report = db.reports.find(r => r.ref === String(body.ref || ''));
+      const fileName = STATIC_FILES[req.url.split('?')[0]];
+
+      if (fileName) {
+        const filePath = path.join(__dirname, fileName);
+
+        if (fs.existsSync(filePath)) {
+          const ext = path.extname(fileName).toLowerCase();
+
+          const contentTypes = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.ico': 'image/x-icon'
+          };
+
+          res.writeHead(200, {
+            'Content-Type': contentTypes[ext] || 'application/octet-stream'
+          });
+
+          fs.createReadStream(filePath).pipe(res);
+          return;
+        }
+      }
       if (!report) return send(res, 404, { error: 'Complaint not found.' });
       if (report.status !== 'resolved') {
         const now = Date.now();
