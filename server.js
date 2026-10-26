@@ -74,9 +74,37 @@ function validMachine(id) {
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   try {
-    if (req.method === 'GET' && url.pathname === '/') {
-      if (!fs.existsSync(HTML_FILE)) return send(res, 500, { error: 'Website HTML file is missing.' });
+        if (req.method === 'GET' && url.pathname === '/') {
+      if (!fs.existsSync(HTML_FILE)) {
+        return send(res, 500, { error: 'Website HTML file is missing.' });
+      }
       return send(res, 200, fs.readFileSync(HTML_FILE, 'utf8'), 'text/html; charset=utf-8');
+    }
+
+    // Serve logo and favicon files
+    if (req.method === 'GET' && STATIC_FILES[url.pathname]) {
+      const fileName = STATIC_FILES[url.pathname];
+      const filePath = path.join(ROOT, fileName);
+
+      if (!fs.existsSync(filePath)) {
+        return send(res, 404, { error: 'Logo file not found.' });
+      }
+
+      const ext = path.extname(fileName).toLowerCase();
+      const contentTypes = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.ico': 'image/x-icon'
+      };
+
+      res.writeHead(200, {
+        'Content-Type': contentTypes[ext] || 'application/octet-stream',
+        'Cache-Control': 'public, max-age=3600',
+        'X-Content-Type-Options': 'nosniff'
+      });
+
+      return fs.createReadStream(filePath).pipe(res);
     }
     if (req.method === 'GET' && url.pathname === '/api/state') {
       return send(res, 200, { status: db.status, reports: db.reports });
@@ -124,29 +152,7 @@ const server = http.createServer(async (req, res) => {
       if (!auth(req)) return send(res, 401, { error: 'Sign in as in-charge to resolve complaints.' });
       const body = await readBody(req);
       const report = db.reports.find(r => r.ref === String(body.ref || ''));
-      const fileName = STATIC_FILES[req.url.split('?')[0]];
-
-      if (fileName) {
-        const filePath = path.join(__dirname, fileName);
-
-        if (fs.existsSync(filePath)) {
-          const ext = path.extname(fileName).toLowerCase();
-
-          const contentTypes = {
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.ico': 'image/x-icon'
-          };
-
-          res.writeHead(200, {
-            'Content-Type': contentTypes[ext] || 'application/octet-stream'
-          });
-
-          fs.createReadStream(filePath).pipe(res);
-          return;
-        }
-      }
+      
       if (!report) return send(res, 404, { error: 'Complaint not found.' });
       if (report.status !== 'resolved') {
         const now = Date.now();
