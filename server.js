@@ -8,7 +8,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const ROOT = __dirname;
-const HTML_FILE = path.join(ROOT, 'LUMS_Pad_Machines_fixed.html');
+const HTML_FILE = path.join(ROOT, 'index.html');
 const DATA_FILE = path.join(ROOT, 'data.json');
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || '0.0.0.0';
